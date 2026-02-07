@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+<!-- ✅ ADDED: mobile scaling -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Delivery Planner</title>
+
+<style>
+
+/* =====================
+   MODERN UI THEME
+===================== */
+
+:root{
+  --bg:#f6f8fb;
+  --card:#ffffff;
+  --text:#1f2937;
+  --border:#d6dbe4;
+  --accent:#2563eb;
+}
+
+body{
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background:var(--bg);
+  padding:30px;
+  color:var(--text);
+  transition:0.3s;
+}
+
+h1{
+  text-align:center;
+  margin-bottom:25px;
+  letter-spacing:2px;
+}
+
+/* card container */
+.card{
+  background:var(--card);
+  border-radius:12px;
+  padding:18px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.06);
+  margin-bottom:25px;
+}
+
+/* tables */
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+}
+
+th{
+  background:#eef2f7;
+  position:sticky;
+  top:0;
+  z-index:2;
+}
+
+th,td{
+  border:1px solid var(--border);
+  padding:8px;
+  font-size:14px;
+  text-align:center;
+}
+
+tbody tr:nth-child(even){
+  background:#fafbfc;
+}
+
+tbody tr:hover{
+  background:#e8f0ff;
+}
+
+input{
+  padding:4px 6px;
+  border-radius:6px;
+  border:1px solid var(--border);
+  font-size:13px;
+  text-align:center;
+}
+
+input:focus{
+  outline:none;
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px rgba(37,99,235,0.15);
+}
+
+button{
+  padding:7px 14px;
+  border-radius:8px;
+  border:none;
+  background:var(--accent);
+  color:white;
+  cursor:pointer;
+}
+
+button:hover{
+  opacity:0.9;
+}
+
+.sectionTitle{
+  font-weight:600;
+  margin:10px 0;
+}
+
+/* ===== DARK MODE ===== */
+.dark{
+  --bg:#0f172a;
+  --card:#1e293b;
+  --text:#e2e8f0;
+  --border:#334155;
+}
+
+.dark table{background:#1e293b}
+.dark th{background:#334155}
+.dark tbody tr:nth-child(even){background:#243042}
+.dark tbody tr:hover{background:#2f3b52}
+
+
+/* ================= PRINT MODE ================= */
+
+@media print{
+
+  button,.toggle{display:none}
+  body{background:white}
+  .card{box-shadow:none}
+
+  input{
+    border:none;
+    background:transparent;
+    font-weight:bold;
+  }
+
+  #delivery th:nth-child(6),
+  #delivery th:nth-child(7),
+  #delivery th:nth-child(9),
+  #delivery td:nth-child(6),
+  #delivery td:nth-child(7),
+  #delivery td:nth-child(9){
+    display:none;
+  }
+
+  #fft th:nth-child(2),
+  #fft th:nth-child(3),
+  #fft td:nth-child(2),
+  #fft td:nth-child(3){
+    display:none;
+  }
+}
+
+
+/* =================================================
+   ✅ RESPONSIVE AUTO-ADJUST (ONLY ADDITION)
+   Layout only — NO LOGIC CHANGED
+================================================= */
+
+*{
+  box-sizing:border-box;
+}
+
+.card{
+  overflow-x:auto;
+}
+
+table{
+  min-width:900px;
+}
+
+@media (max-width:1200px){
+  body{padding:15px;}
+  th,td{font-size:13px;padding:6px;}
+}
+
+@media (max-width:768px){
+
+  body{padding:10px;}
+  h1{font-size:20px;}
+
+  .card{padding:10px;}
+
+  .card:first-of-type{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+  }
+
+  th,td{font-size:11px;padding:5px;}
+  input{width:70px;font-size:11px;}
+  button{padding:5px 10px;font-size:12px;}
+}
+
+@media (max-width:480px){
+  th,td{font-size:10px;padding:4px;}
+  input{width:60px;}
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>DELIVERY PLANNER</h1>
+
+<div class="card">
+
+STORE: <input>
+DATE: <input type="date">
+
+&nbsp;&nbsp;&nbsp;
+
+STAFF:
+<input type="number" id="staffCount" value="5" style="width:60px">
+
+&nbsp;&nbsp; SHIFT 22:00 → 06:00
+
+&nbsp;&nbsp;
+
+AVAILABLE:
+<span id="staffMin">2400</span> min
+
+&nbsp;&nbsp;
+
+<button class="toggle" onclick="toggleDark()">🌙 Dark</button>
+<button onclick="window.print()">🖨 Print</button>
+
+</div>
+
+
+<div class="card">
+
+<table id="delivery">
+<thead>
+<tr>
+<th>PERSON</th>
+<th>AREA</th>
+<th>PALLET</th>
+<th>PER PALLET</th>
+<th>TIME NEEDED</th>
+<th>START</th>
+<th>FINISH</th>
+<th>TIME OF COMPLETION</th>
+<th>WORKED MIN</th>
+</tr>
+</thead>
+<tbody id="deliveryRows"></tbody>
+<tfoot>
+<tr>
+<td colspan="2"><b>TOTAL</b></td>
+<td id="palletTotal">0</td>
+<td></td>
+<td id="neededTotal">0</td>
+<td></td>
+<td></td>
+<td></td>
+<td id="workedTotal">0</td>
+</tr>
+</tfoot>
+</table>
+
+</div>
+
+
+<div class="card">
+
+<div class="sectionTitle">Night Shift FFT</div>
+
+<table id="fft">
+<thead>
+<tr>
+<th>TASK</th>
+<th>START</th>
+<th>FINISH</th>
+<th>MINUTES</th>
+</tr>
+</thead>
+<tbody id="fftRows"></tbody>
+</table>
+
+</div>
+
+
+<div class="card">
+<b>TOTAL MINUTES:</b> <span id="grandMin">0</span>
+&nbsp;&nbsp;
+<b>TOTAL HOURS:</b> <span id="grandHour">0</span>
+</div>
+
+
+<script>
+
+/* ===== JS 100% ORIGINAL ===== */
+
+function toggleDark(){
+  document.body.classList.toggle("dark");
+}
+
+document.addEventListener("keydown", e=>{
+  if(e.key==="Enter"){
+    const inputs=[...document.querySelectorAll("input")];
+    const i=inputs.indexOf(document.activeElement);
+    if(i>-1 && i<inputs.length-1){
+      inputs[i+1].focus();
+    }
+  }
+});
+
+const areas=[
+["Ambient Mixes",45],
+["Ambient Bulks",10],
+["Fruit & Veg",30],
+["Non Food Promo",50],
+["Limited Time Offer",45],
+["Bread",15],
+["Milk",10],
+["Chiller",45],
+["Convenience",45],
+["Freezer",35],
+["Meat & Poultry",35]
+];
+
+const fftTasks=[
+"WORK FRESH BACKSTOCK",
+"CRUSH BOXES / CHANGE BALER",
+"TIDY WAREHOUSE",
+"SWEEP AND HAKO",
+"DELIVERY TEMPERATURE CHECK",
+"DEBRIEF SIGN",
+"RECEIVE DELIVERY"
+];
+
+const dBody=document.getElementById("deliveryRows");
+const fBody=document.getElementById("fftRows");
+
+areas.forEach(a=>{
+  const r=document.createElement("tr");
+  r.innerHTML=`
+  <td><input></td>
+  <td>${a[0]}</td>
+  <td><input type="number" class="pallet" value="0"></td>
+  <td>${a[1]}</td>
+  <td class="need">0</td>
+  <td><input type="time" class="start"></td>
+  <td><input type="time" class="finish"></td>
+  <td class="complete">--</td>
+  <td class="worked">0</td>`;
+  dBody.appendChild(r);
+});
+
+fftTasks.forEach(t=>{
+  const r=document.createElement("tr");
+  r.innerHTML=`
+  <td>${t}</td>
+  <td><input type="time" class="fftStart"></td>
+  <td><input type="time" class="fftFinish"></td>
+  <td class="fftWorked">0</td>`;
+  fBody.appendChild(r);
+});
+
+document.querySelectorAll("input").forEach(i=>i.addEventListener("input",calc));
+
+function toMin(t){
+  if(!t) return 0;
+  const [h,m]=t.split(":");
+  return +h*60 + +m;
+}
+
+function calc(){
+
+  let palletTotal=0,neededTotal=0,workedTotal=0,fftTotal=0;
+
+  document.querySelectorAll("#deliveryRows tr").forEach(r=>{
+    const pallets=+r.querySelector(".pallet").value;
+    const rate=+r.cells[3].innerText;
+
+    const start=toMin(r.querySelector(".start").value);
+    let finish=toMin(r.querySelector(".finish").value);
+    if(finish<start) finish+=1440;
+
+    const need=pallets*rate;
+    const worked=finish-start;
+
+    r.querySelector(".need").innerText=need;
+    r.querySelector(".worked").innerText=worked;
+    r.querySelector(".complete").innerText=r.querySelector(".finish").value;
+
+    palletTotal+=pallets;
+    neededTotal+=need;
+    workedTotal+=worked;
+  });
+
+  document.querySelectorAll("#fftRows tr").forEach(r=>{
+    const s=toMin(r.querySelector(".fftStart").value);
+    let f=toMin(r.querySelector(".fftFinish").value);
+    if(f<s) f+=1440;
+    const w=f-s;
+    r.querySelector(".fftWorked").innerText=w;
+    fftTotal+=w;
+  });
+
+  document.getElementById("palletTotal").innerText=palletTotal;
+  document.getElementById("neededTotal").innerText=neededTotal;
+  document.getElementById("workedTotal").innerText=workedTotal;
+
+  const grand=workedTotal+fftTotal;
+  document.getElementById("grandMin").innerText=grand;
+  document.getElementById("grandHour").innerText=(grand/60).toFixed(2);
+
+  document.getElementById("staffMin").innerText=document.getElementById("staffCount").value*480;
+}
+
+calc();
+
+</script>
+
+</body>
+</html>
